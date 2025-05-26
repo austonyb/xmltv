@@ -2,8 +2,8 @@ import { DateTime } from 'luxon';
 import { create } from 'xmlbuilder2';
 
 // Configuration (matching PHP script)
-const timezone = "America/New_York";
-const lineUpID = "USA-OTA30236";
+const timezone = "America/Denver";
+const lineUpID = "USA-OTA84321";
 const days = 8;
 
 // Start Bun HTTP server
