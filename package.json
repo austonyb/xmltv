@@ -1,13 +1,13 @@
 {
-  "name": "tv-guide",
+  "name": "xmltv",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "bun run index.ts",
-    "build:linux": "bun build --compile --target=x86_64-linux-gnu --out=tv-guide-server index.ts",
-    "build:macos": "bun build --compile --target=x86_64-macos --out=tv-guide-server index.ts",
-    "build:windows": "bun build --compile --target=x86_64-windows --out=tv-guide-server.exe index.ts"
+    "build:linux": "bun build --compile --target=x86_64-linux-gnu --out=xmltv-server index.ts",
+    "build:macos": "bun build --compile --target=x86_64-macos --out=xmltv-server index.ts",
+    "build:windows": "bun build --compile --target=x86_64-windows --out=xmltv-server.exe index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
