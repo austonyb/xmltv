@@ -58,12 +58,14 @@ async function generateXml(req: Request): Promise<Response> {
   const requestUrl = req.url;
   const now = DateTime.now().toUTC().toISO();
 
-  // Initialize XML structure
-  const xml = create({ version: '1.0', encoding: 'ISO-8859-1' })
+  // Initialize XML structure with XML declaration and proper encoding
+  const xml = create({ version: '1.0', encoding: 'UTF-8' })
     .ele('tv')
-    .att('date', now)
-    .att('source-info-url', requestUrl)
-    .att('source-info-name', 'tvtv2xmltv');
+    .att('generator-info-name', 'tvtv2xmltv')
+    .att('generator-info-url', 'https://github.com/yourusername/tvtv2xmltv')
+    .att('source-info-name', 'TVTV')
+    .att('source-info-url', 'https://www.tvtv.us')
+    .att('source-data-url', requestUrl);
 
   // Fetch lineup data (channels)
   const lineupUrl = `https://www.tvtv.us/api/v1/lineup/${lineUpID}/channels`;
@@ -77,12 +79,24 @@ async function generateXml(req: Request): Promise<Response> {
 
   // Collect station IDs and build channel elements
   const allChannels: string[] = [];
+  const channelMap: Record<string, string> = {}; // Map stationId to channelNumber
+  
   for (const channel of lineupData) {
     allChannels.push(channel.stationId);
-    const channelEle = xml.ele('channel').att('id', channel.channelNumber);
-    channelEle.ele('display-name').txt(channel.channelNumber);
+    const channelId = `ch${channel.stationId}`; // Prefix with 'ch' to ensure valid ID
+    channelMap[channel.stationId] = channelId;
+    
+    const channelEle = xml.ele('channel').att('id', channelId);
+    // Add display names in order of specificity
     channelEle.ele('display-name').txt(channel.stationCallSign);
-    channelEle.ele('icon').att('src', `https://www.tvtv.us${channel.logo}`);
+    channelEle.ele('display-name').txt(`Channel ${channel.channelNumber}`);
+    channelEle.ele('display-name').txt(channel.channelNumber);
+    if (channel.logo) {
+      channelEle.ele('icon')
+        .att('src', `https://www.tvtv.us${channel.logo}`)
+        .att('width', '360')
+        .att('height', '270');
+    }
   }
 
   // Fetch guide data for each day
@@ -117,15 +131,23 @@ async function generateXml(req: Request): Promise<Response> {
           const endStr = programEnd.toFormat('yyyyMMddHHmmss ZZ');
 
           // Build programme element
+          const channelId = channelMap[channel.stationId] || channel.channelNumber;
           const progEle = xml.ele('programme')
-            .att('start', startStr)
-            .att('stop', endStr)
-            .att('duration', program.duration || '') // Included for compatibility
-            .att('channel', channel.channelNumber);
+            .att('start', programStart.toUTC().toFormat('yyyyMMddHHmmss +0000'))
+            .att('stop', programEnd.toUTC().toFormat('yyyyMMddHHmmss +0000'))
+            .att('channel', channelId);
 
-          progEle.ele('title').att('lang', 'en').txt(program.title || '');
+          // Required title element
+          progEle.ele('title').att('lang', 'en').txt(program.title || 'No Title');
+          
+          // Optional elements
           if (program.subtitle) {
             progEle.ele('sub-title').att('lang', 'en').txt(program.subtitle);
+          }
+          
+          // Add description if available
+          if (program.description) {
+            progEle.ele('desc').att('lang', 'en').txt(program.description);
           }
 
           // Categories based on type
@@ -155,12 +177,24 @@ async function generateXml(req: Request): Promise<Response> {
     }
   }
 
-  // Finalize XML and create response
-  const xmlString = xml.end({ prettyPrint: true });
+  // Convert to XML string with XML declaration and proper formatting
+  const xmlString = xml.end({
+    prettyPrint: true,
+    headless: false, // Include XML declaration
+    indent: '  ',
+    newline: '\n'
+  });
+  
+  // Log a sample of the XML for debugging
+  console.log('Generated XML sample:', xmlString.substring(0, 500) + '...');
+  
   return new Response(xmlString, {
-    headers: {
-      'Content-Type': 'text/xml',
-      'Content-Disposition': `attachment; filename=xmltv.${fileDate}.xml`,
+    headers: { 
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="tvguide.xml"',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     },
   });
 }
