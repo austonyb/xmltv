@@ -1,0 +1,23 @@
+{
+  "name": "tv-guide",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "build:linux": "bun build --compile --target=x86_64-linux-gnu --out=tv-guide-server index.ts",
+    "build:macos": "bun build --compile --target=x86_64-macos --out=tv-guide-server index.ts",
+    "build:windows": "bun build --compile --target=x86_64-windows --out=tv-guide-server.exe index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/luxon": "^3.6.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "luxon": "^3.6.1",
+    "xmlbuilder2": "^3.1.1"
+  }
+}
